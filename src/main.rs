@@ -1,0 +1,81 @@
+#[macro_use]
+extern crate clap;
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate lazy_static;
+
+use clap::{App, AppSettings, Arg, SubCommand};
+
+mod core;
+
+#[tokio::main]
+async fn main() {
+    trace!("Getting matches...");
+    let matches = App::new(crate_name!())
+        .version(crate_version!())
+        .author(crate_authors!())
+        .about(crate_description!())
+        .setting(AppSettings::ArgRequiredElseHelp)
+        .subcommand(
+            SubCommand::with_name("refresh")
+                .about("Refreshes current stats cache")
+                .arg(
+                    Arg::with_name("threads")
+                        .help("Set threads for refreshing stats")
+                        .short("t")
+                        .long("threads")
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("force-refresh")
+                        .help("Override already downloaded stats")
+                        .short("f")
+                        .long("force")
+                        .takes_value(false),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("appid")
+                .about("Get stats for appid")
+                .arg(
+                    Arg::with_name("appid")
+                        .help("App ID")
+                        .index(1)
+                        .takes_value(true),
+                ),
+        )
+        .get_matches();
+
+    trace!("Matching subcommand...");
+    match matches.subcommand_name() {
+        Some("refresh") => {
+            trace!("Matched refresh subcommand");
+            let mut config = core::config::Config::default();
+
+            if let Some(ref matches) = matches.subcommand_matches("refresh") {
+                if let Some(threads) = matches.value_of("threads") {
+                    config.threads = threads.parse::<usize>().unwrap();
+                }
+
+                config.force_refresh = matches.is_present("force-refresh")
+            }
+
+            println!(
+                "Config: threads = {}; force-refresh = {}",
+                config.threads, config.force_refresh
+            );
+            core::refresh_cache(config).await;
+        }
+        Some("appid") => {
+            trace!("Matched appid subcommand");
+
+            if let Some(ref matches) = matches.subcommand_matches("appid") {
+                core::find_stats(matches.value_of("appid").unwrap()).await;
+            }
+        }
+        _ => {
+            trace!("Matched None o_O");
+        }
+    }
+}
