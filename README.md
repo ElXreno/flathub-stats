@@ -1,4 +1,7 @@
 # flathub-stats
+
+[![github actions](https://github.com/ElXreno/flathub-stats/workflows/Flatpak%20build/badge.svg)](https://github.com/ElXreno/filesorter/actions)
+
 Utility for fast grepping stats from Flathub (WIP)
 
 ---
