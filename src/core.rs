@@ -6,7 +6,7 @@ use chrono::prelude::*;
 use chrono::Duration;
 use futures::StreamExt;
 use reqwest::Client;
-use std::path::PathBuf;
+use std::path::Path;
 use tokio::fs::File;
 use tokio::prelude::*;
 
@@ -52,7 +52,7 @@ async fn download_stats(
         .join("stats")
         .join(&file_path);
 
-    create_dir(&destination_file.parent().unwrap().to_path_buf());
+    create_dir(&destination_file.parent().unwrap());
 
     if !force_refresh && destination_file.exists() {
         debug!("{}: already downloaded!", date);
@@ -85,7 +85,7 @@ async fn download_stats(
     println!("{}: downloaded! Status: {}", date, response.status());
 }
 
-fn create_dir(path: &PathBuf) {
+fn create_dir(path: &Path) {
     if !path.exists() {
         match std::fs::create_dir_all(&path) {
             Ok(()) => debug!("{} dir created successfully!", &path.display()),
