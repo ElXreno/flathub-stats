@@ -13,7 +13,7 @@ pub mod sqlite;
 pub mod structs;
 pub mod utils;
 
-pub async fn refresh_cache(config: config::Config) {
+pub async fn refresh_cache(config: &config::Config) {
     let days = config
         .end_date
         .signed_duration_since(config.start_date)
@@ -40,7 +40,7 @@ pub async fn refresh_cache(config: config::Config) {
 
     sqlite::update_date_cache_table();
 
-    println!("Done!");
+    println!("Refreshing done!");
 }
 
 async fn download_stats(

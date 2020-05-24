@@ -26,18 +26,18 @@ async fn main() {
                 .about("Refreshes current stats cache")
                 .arg(
                     Arg::with_name("threads")
-                        .help("Set threads for refreshing stats")
+                        .help("Set threads for refreshing stats (currently not fully required due sqlite)")
                         .short("t")
                         .long("threads")
-                        .takes_value(true),
+                        .takes_value(true)
                 )
                 .arg(
                     Arg::with_name("force-refresh")
                         .help("Override already downloaded stats")
                         .short("f")
                         .long("force")
-                        .takes_value(false),
-                ),
+                        .takes_value(false)
+                )
         )
         .subcommand(
             SubCommand::with_name("appid")
@@ -46,10 +46,27 @@ async fn main() {
                     Arg::with_name("appid")
                         .help("App ID")
                         .index(1)
-                        .takes_value(true),
-                ),
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("refresh")
+                        .help("Refreshes current stats cache")
+                        .short("r")
+                        .long("refresh")
+                        .takes_value(false)
+                )
+                .arg(
+                Arg::with_name("force-refresh")
+                    .help("Override already downloaded stats")
+                    .short("f")
+                    .long("force")
+                    .takes_value(false)
+            )
         )
         .get_matches();
+
+    trace!("Initialize config...");
+    let mut config = core::config::Config::default();
 
     trace!("Initializing db...");
     core::sqlite::initialize_db();
@@ -58,7 +75,6 @@ async fn main() {
     match matches.subcommand_name() {
         Some("refresh") => {
             trace!("Matched refresh subcommand");
-            let mut config = core::config::Config::default();
 
             if let Some(ref matches) = matches.subcommand_matches("refresh") {
                 if let Some(threads) = matches.value_of("threads") {
@@ -68,24 +84,23 @@ async fn main() {
                 config.force_refresh = matches.is_present("force-refresh")
             }
 
-            println!(
-                "Config: threads = {}; force-refresh = {}",
-                config.threads, config.force_refresh
-            );
-            core::refresh_cache(config).await;
+            refresh(&config).await;
         }
         Some("appid") => {
             trace!("Matched appid subcommand");
 
             if let Some(ref matches) = matches.subcommand_matches("appid") {
+                config.force_refresh = matches.is_present("force-refresh");
+
+                if matches.is_present("refresh") {
+                    refresh(&config).await;
+                }
+
                 if let Some(app_id) = matches.value_of("appid") {
                     let days = core::sqlite::get_stats_for_app_id(app_id.to_string());
                     for day in days {
                         println!("-----------------");
-                        println!(
-                            "Date: {}",
-                            day.date.format(core::config::Config::default().date_format)
-                        );
+                        println!("Date: {}", day.date.format(config.date_format));
                         println!("Downloads: {}", day.downloads);
                         println!("New downloads: {}", day.new_downloads);
                         println!("Updates: {}", day.updates);
@@ -97,4 +112,12 @@ async fn main() {
             trace!("Matched None o_O");
         }
     }
+}
+
+async fn refresh(config: &core::config::Config) {
+    println!(
+        "Config: threads = {}; force-refresh = {}",
+        config.threads, config.force_refresh
+    );
+    core::refresh_cache(config).await;
 }

@@ -21,25 +21,28 @@ pub fn initialize_db() {
     let mut conn = get_connection();
     let transaction = conn.transaction().unwrap();
 
-    transaction.execute(
-        "create table if not exists refs (
-            appid varchar(128),
-            date varchar(10),
-            downloads int,
-            updates int,
-            new_downloads int,
-            primary key (appid, date)
-        );",
-        params![],
-    )
-    .unwrap();
+    transaction
+        .execute(
+            "create table if not exists refs (
+                appid varchar(128),
+                date varchar(10),
+                downloads int,
+                updates int,
+                new_downloads int,
+                primary key (appid, date)
+            );",
+            params![],
+        )
+        .unwrap();
 
-    transaction.execute(
-        "create table if not exists date_cache (
-            date varchar(10) primary key
-        );",
-        params![]
-    ).unwrap();
+    transaction
+        .execute(
+            "create table if not exists date_cache (
+                date varchar(10) primary key
+            );",
+            params![],
+        )
+        .unwrap();
 
     transaction.commit().unwrap();
 }
@@ -110,8 +113,7 @@ pub fn is_stats_exists_by_date(date: &str) -> bool {
         .prepare("select * from date_cache where date = :date limit 1")
         .unwrap();
 
-    let mut result = prep.query_named(named_params! { ":date": date })
-        .unwrap();
+    let mut result = prep.query_named(named_params! { ":date": date }).unwrap();
 
     if let Some(_row) = result.next().unwrap() {
         return true;
@@ -126,18 +128,22 @@ pub fn update_date_cache_table() {
         .prepare("select distinct date from refs order by date asc;")
         .unwrap();
 
-    let mapped_rows_result = prep.query_map(params![], |row| {
-        Ok(Some(row.get::<usize, String>(0).unwrap()))
-    }).unwrap();
+    let mapped_rows_result = prep
+        .query_map(params![], |row| {
+            Ok(Some(row.get::<usize, String>(0).unwrap()))
+        })
+        .unwrap();
 
     let mut conn = get_connection();
     let transaction = conn.transaction().unwrap();
 
     for mapped_row_result in mapped_rows_result {
-        transaction.execute(
-            "insert or ignore into date_cache values (?1);",
-            params![mapped_row_result.unwrap()]
-        ).unwrap();
+        transaction
+            .execute(
+                "insert or ignore into date_cache values (?1);",
+                params![mapped_row_result.unwrap()],
+            )
+            .unwrap();
     }
 
     transaction.commit().unwrap();
