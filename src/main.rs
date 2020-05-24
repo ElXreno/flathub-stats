@@ -51,6 +51,9 @@ async fn main() {
         )
         .get_matches();
 
+    trace!("Initializing db...");
+    core::sqlite::initialize_db();
+
     trace!("Matching subcommand...");
     match matches.subcommand_name() {
         Some("refresh") => {
@@ -74,7 +77,21 @@ async fn main() {
         Some("appid") => {
             trace!("Matched appid subcommand");
 
-            println!("appid subcommand currently not working. WIP!");
+            if let Some(ref matches) = matches.subcommand_matches("appid") {
+                if let Some(app_id) = matches.value_of("appid") {
+                    let days = core::sqlite::get_stats_for_app_id(app_id.to_string());
+                    for day in days {
+                        println!("-----------------");
+                        println!(
+                            "Date: {}",
+                            day.date.format(core::config::Config::default().date_format)
+                        );
+                        println!("Downloads: {}", day.downloads);
+                        println!("New downloads: {}", day.new_downloads);
+                        println!("Updates: {}", day.updates);
+                    }
+                }
+            }
         }
         _ => {
             trace!("Matched None o_O");
