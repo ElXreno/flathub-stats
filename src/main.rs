@@ -70,9 +70,7 @@ async fn main() {
         Some("appid") => {
             trace!("Matched appid subcommand");
 
-            if let Some(ref matches) = matches.subcommand_matches("appid") {
-                core::find_stats(matches.value_of("appid").unwrap()).await;
-            }
+            println!("appid subcommand currently not working. WIP!");
         }
         _ => {
             trace!("Matched None o_O");

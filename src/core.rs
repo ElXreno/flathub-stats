@@ -7,15 +7,6 @@ use tokio::fs::File;
 use tokio::prelude::*;
 
 pub mod config;
-pub mod structs;
-
-pub async fn find_stats(appid: &str) {
-    let file = include_str!("/home/elxreno/.cache/flathub-stats/stats/2020/05/20.json");
-
-    let json: serde_json::Value = serde_json::from_str(file).expect("Can't parse json file!");
-
-    println!("{:#?}", json.get("refs").unwrap().get(appid));
-}
 
 pub async fn refresh_cache(config: config::Config) {
     let tmp = config::project_dirs::get_cache_dir();
