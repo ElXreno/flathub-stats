@@ -1,3 +1,5 @@
+%global debug_package %{nil}
+
 %global commit 4cbd78e26a0418f9d9664ce2a39c1170e0640169
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 
@@ -8,35 +10,45 @@ Summary:        Utility for fast grepping stats from Flathub
 
 License:        MPLv2.0
 URL:            https://github.com/ElXreno/flathub-stats
-Source:         %{url}/archive/%{commit}/%{name}-%{shortcommit}.tar.gz
+Source:         %{name}-sources-%{shortcommit}.tar.gz
 
 ExclusiveArch:  %{rust_arches}
 
 BuildRequires:  rust-packaging
 
+BuildRequires:  pkgconfig(openssl)
+BuildRequires:  pkgconfig(sqlite3)
+
 %description
 %{summary}.
 
 %prep
-%autosetup -n %{name}-%{commit}
-%cargo_prep
+%autosetup -n %{name}-sources-%{shortcommit}
 
-%generate_buildrequires
-%cargo_generate_buildrequires
+# Let's say cargo use vendored sources
+mkdir ~/.cargo
+cat > ~/.cargo/config <<EOF
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "$(pwd)/vendor"
+EOF
+
 
 %build
-%cargo_build
+cargo build --release --locked
+strip target/release/%{name}
+
 
 %install
-%cargo_install
+install -m 0755 -Dp target/release/%{name} %{buildroot}%{_bindir}/%{name}
 
-%check
-%cargo_test
 
 %files
 %license LICENSE
 %doc README.md
-%{_bindir}/flathub-stats
+%{_bindir}/%{name}
 
 %changelog
 * Sun May 24 2020 ElXreno <elxreno@gmail.com> - 0~7.git4cbd78e-1
