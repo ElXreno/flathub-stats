@@ -1,0 +1,34 @@
+app-id: com.elxreno.flathub-stats
+runtime: org.freedesktop.Platform
+runtime-version: '19.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-nightly
+command: flathub-stats
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=pulseaudio
+  - --socket=x11
+build-options:
+  append-path: /usr/lib/sdk/rust-nightly/bin
+  env:
+    RUSTFLAGS: --remap-path-prefix =../
+    CARGO_HOME: /run/build/flathub-stats/cargo
+modules:
+  - name: flathub-stats
+    buildsystem: simple
+    build-commands:
+      # Unoptimize dev/debug builds to speed up build process
+      # * Purpose of this to test local builds. Comment for Flathub build.
+      #- sed -i 's/opt-level = 3/opt-level = 0/' Cargo.toml
+      #- sed -i 's/opt-level = 2/opt-level = 0/g' Cargo.toml
+
+      - cargo --offline fetch --manifest-path Cargo.toml
+      - cargo --offline build --release
+      - install -D -m 755 ./target/release/flathub-stats -t /app/bin/
+    sources:
+      - type: git
+        commit: 4cbd78e26a0418f9d9664ce2a39c1170e0640169
+        url: https://github.com/ElXreno/flathub-stats
+      - generated-sources.json
