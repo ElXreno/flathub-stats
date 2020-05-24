@@ -2,20 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use crate::core::structs::AppId;
 use chrono::prelude::*;
 use chrono::Duration;
 use futures::StreamExt;
 use reqwest::Client;
-use tokio::fs::File;
-use tokio::prelude::*;
 
 pub mod config;
+pub mod sqlite;
+pub mod structs;
 pub mod utils;
 
 pub async fn refresh_cache(config: config::Config) {
-    let tmp = config::project_dirs::get_cache_dir();
-    println!("Path: {}", tmp.display());
-
     let days = config
         .end_date
         .signed_duration_since(config.start_date)
@@ -37,6 +35,12 @@ pub async fn refresh_cache(config: config::Config) {
     .buffer_unordered(config.threads)
     .collect::<Vec<()>>();
     fetchers.await;
+
+    println!("Download done! Creating cache...");
+
+    sqlite::update_date_cache_table();
+
+    println!("Done!");
 }
 
 async fn download_stats(
@@ -45,42 +49,57 @@ async fn download_stats(
     date_format: &str,
     force_refresh: bool,
 ) {
-    debug!("Checking for date: {}...", date.format(date_format));
+    let fdate = date.format(date_format).to_string();
+    debug!("Checking for existence: {}...", &fdate);
 
-    let file_path = format!("{}.json", date.format(date_format));
-    let destination_file = config::project_dirs::get_cache_dir()
-        .join("stats")
-        .join(&file_path);
-
-    utils::create_dir(&destination_file.parent().unwrap());
-
-    if !force_refresh && destination_file.exists() {
+    // TODO: Improve checking, maybe it not fully downloaded for this date
+    if !force_refresh && sqlite::is_stats_exists_by_date(fdate.as_str()) {
         debug!("{}: already downloaded!", date);
         return;
     }
 
-    let mut response = client
+    let file_path = format!("{}.json", &fdate);
+
+    let response = client
         .get(format!("{}/{}", config::FLATHUB_STATS_BASE_URL, file_path).as_str())
         .send()
         .await
         .unwrap();
 
+    let status = &response.status();
+
     if !response.status().is_success() {
-        println!(
-            "{}: failed to download! Status: {}",
-            date,
-            response.status()
-        );
+        println!("{}: failed to download! Status: {}", date, status);
         return;
     }
 
-    let mut file = File::create(&destination_file).await.unwrap();
+    let body = &response.text().await.unwrap();
+    let json_response: serde_json::Value = serde_json::from_str(body).unwrap();
 
-    while let Some(chunk) = response.chunk().await.unwrap() {
-        file.write(&chunk).await.unwrap();
+    let mut app_ids: Vec<AppId> = vec![];
+    let refs = json_response["refs"].as_object().unwrap();
+
+    for refs in refs {
+        let app_id = refs.0.clone();
+        let mut downloads = 0;
+        let mut updates = 0;
+        for refs in refs.1.as_object().unwrap() {
+            let tmp = refs.1.as_array().unwrap();
+            downloads += tmp[0].as_i64().unwrap();
+            updates += tmp[1].as_i64().unwrap();
+        }
+        let new_downloads = downloads - updates;
+
+        app_ids.push(AppId {
+            app_id,
+            date,
+            downloads,
+            updates,
+            new_downloads,
+        })
     }
 
-    file.flush().await.unwrap();
+    sqlite::save_stats(app_ids);
 
-    println!("{}: downloaded! Status: {}", date, response.status());
+    println!("{}: downloaded! Status: {}", date, status);
 }
