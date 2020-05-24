@@ -38,6 +38,13 @@ async fn main() {
                         .long("force")
                         .takes_value(false)
                 )
+                .arg(
+                    Arg::with_name("ignore-404")
+                        .help("Ignore 404 status code")
+                        .short("i")
+                        .long("ignore-404")
+                        .takes_value(false)
+                )
         )
         .subcommand(
             SubCommand::with_name("appid")
@@ -61,7 +68,14 @@ async fn main() {
                     .short("f")
                     .long("force")
                     .takes_value(false)
-            )
+                )
+                .arg(
+                    Arg::with_name("ignore-404")
+                        .help("Ignore 404 status code")
+                        .short("i")
+                        .long("ignore-404")
+                        .takes_value(false)
+                )
         )
         .get_matches();
 
@@ -81,7 +95,8 @@ async fn main() {
                     config.threads = threads.parse::<usize>().unwrap();
                 }
 
-                config.force_refresh = matches.is_present("force-refresh")
+                config.force_refresh = matches.is_present("force-refresh");
+                config.ignore_404 = matches.is_present("ignore-404");
             }
 
             refresh(&config).await;
@@ -91,6 +106,7 @@ async fn main() {
 
             if let Some(ref matches) = matches.subcommand_matches("appid") {
                 config.force_refresh = matches.is_present("force-refresh");
+                config.ignore_404 = matches.is_present("ignore-404");
 
                 if matches.is_present("refresh") {
                     refresh(&config).await;

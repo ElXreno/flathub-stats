@@ -28,8 +28,9 @@ pub async fn refresh_cache(config: &config::Config) {
         let date_format = config.date_format;
         let force_refresh = config.force_refresh;
         let client = &client;
+        let ignore_404 = config.ignore_404;
         async move {
-            download_stats(client, date, date_format, force_refresh).await;
+            download_stats(client, date, date_format, force_refresh, ignore_404).await;
         }
     }))
     .buffer_unordered(config.threads)
@@ -48,6 +49,7 @@ async fn download_stats(
     date: DateTime<Utc>,
     date_format: &str,
     force_refresh: bool,
+    ignore_404: bool,
 ) {
     let fdate = date.format(date_format).to_string();
     debug!("Checking for existence: {}...", &fdate);
@@ -69,7 +71,9 @@ async fn download_stats(
     let status = &response.status();
 
     if !response.status().is_success() {
-        println!("{}: failed to download! Status: {}", date, status);
+        if response.status() != 404 || !ignore_404 {
+            println!("{}: failed to download! Status: {}", date, status);
+        }
         return;
     }
 

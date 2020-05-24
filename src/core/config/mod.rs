@@ -14,6 +14,7 @@ pub struct Config {
     pub end_date: DateTime<Utc>,
     pub threads: usize,
     pub force_refresh: bool,
+    pub ignore_404: bool,
 }
 
 impl Default for Config {
@@ -24,6 +25,7 @@ impl Default for Config {
             end_date: Utc::now(), // end_date: Utc.ymd(2019, 01, 01).and_hms(0, 0, 0),
             threads: 4,
             force_refresh: false,
+            ignore_404: false,
         }
     }
 }
