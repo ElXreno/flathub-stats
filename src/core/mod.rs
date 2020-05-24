@@ -6,11 +6,11 @@ use chrono::prelude::*;
 use chrono::Duration;
 use futures::StreamExt;
 use reqwest::Client;
-use std::path::Path;
 use tokio::fs::File;
 use tokio::prelude::*;
 
 pub mod config;
+pub mod utils;
 
 pub async fn refresh_cache(config: config::Config) {
     let tmp = config::project_dirs::get_cache_dir();
@@ -52,7 +52,7 @@ async fn download_stats(
         .join("stats")
         .join(&file_path);
 
-    create_dir(&destination_file.parent().unwrap());
+    utils::create_dir(&destination_file.parent().unwrap());
 
     if !force_refresh && destination_file.exists() {
         debug!("{}: already downloaded!", date);
@@ -83,18 +83,4 @@ async fn download_stats(
     file.flush().await.unwrap();
 
     println!("{}: downloaded! Status: {}", date, response.status());
-}
-
-fn create_dir(path: &Path) {
-    if !path.exists() {
-        match std::fs::create_dir_all(&path) {
-            Ok(()) => debug!("{} dir created successfully!", &path.display()),
-            Err(e) => panic!("Error {}", e),
-        }
-    } else if !path.is_dir() {
-        panic!(
-            "{} already exists but is not a directory, exiting...",
-            &path.display()
-        );
-    }
 }
