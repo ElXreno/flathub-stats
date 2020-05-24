@@ -35,6 +35,12 @@ pub async fn refresh_cache(config: config::Config) {
     .buffer_unordered(config.threads)
     .collect::<Vec<()>>();
     fetchers.await;
+
+    println!("Download done! Creating cache...");
+
+    sqlite::update_date_cache_table();
+
+    println!("Done!");
 }
 
 async fn download_stats(
@@ -53,16 +59,6 @@ async fn download_stats(
     }
 
     let file_path = format!("{}.json", &fdate);
-    // let destination_file = config::project_dirs::get_cache_dir()
-    //     .join("stats")
-    //     .join(&file_path);
-    //
-    // utils::create_dir(&destination_file.parent().unwrap());
-    //
-    // if !force_refresh && destination_file.exists() {
-    //     debug!("{}: already downloaded!", date);
-    //     return;
-    // }
 
     let response = client
         .get(format!("{}/{}", config::FLATHUB_STATS_BASE_URL, file_path).as_str())

@@ -8,7 +8,7 @@ use crate::core::config::project_dirs;
 use crate::core::config::Config;
 use crate::core::structs::AppId;
 use chrono::{DateTime, NaiveDate, Utc};
-use rusqlite::{named_params, params, Connection, NO_PARAMS};
+use rusqlite::{named_params, params, Connection};
 
 fn get_connection() -> Connection {
     let config_dir = project_dirs::get_config_dir();
@@ -18,20 +18,30 @@ fn get_connection() -> Connection {
 }
 
 pub fn initialize_db() {
-    let conn = get_connection();
+    let mut conn = get_connection();
+    let transaction = conn.transaction().unwrap();
 
-    conn.execute(
+    transaction.execute(
         "create table if not exists refs (
-                appid varchar(128),
-                date varchar(10),
-                downloads int,
-                updates int,
-                new_downloads int,
-                primary key (appid, date)
-            );",
-        NO_PARAMS,
+            appid varchar(128),
+            date varchar(10),
+            downloads int,
+            updates int,
+            new_downloads int,
+            primary key (appid, date)
+        );",
+        params![],
     )
     .unwrap();
+
+    transaction.execute(
+        "create table if not exists date_cache (
+            date varchar(10) primary key
+        );",
+        params![]
+    ).unwrap();
+
+    transaction.commit().unwrap();
 }
 
 pub fn save_stats(app_ids: Vec<AppId>) {
@@ -97,7 +107,7 @@ pub fn get_stats_for_app_id(app_id: String) -> Vec<AppId> {
 pub fn is_stats_exists_by_date(date: &str) -> bool {
     let conn = get_connection();
     let mut prep = conn
-        .prepare("select * from refs where date = :date limit 1")
+        .prepare("select * from date_cache where date = :date limit 1")
         .unwrap();
 
     let mut result = prep.query_named(named_params! { ":date": date })
@@ -108,4 +118,27 @@ pub fn is_stats_exists_by_date(date: &str) -> bool {
     }
 
     false
+}
+
+pub fn update_date_cache_table() {
+    let conn = get_connection();
+    let mut prep = conn
+        .prepare("select distinct date from refs order by date asc;")
+        .unwrap();
+
+    let mapped_rows_result = prep.query_map(params![], |row| {
+        Ok(Some(row.get::<usize, String>(0).unwrap()))
+    }).unwrap();
+
+    let mut conn = get_connection();
+    let transaction = conn.transaction().unwrap();
+
+    for mapped_row_result in mapped_rows_result {
+        transaction.execute(
+            "insert or ignore into date_cache values (?1);",
+            params![mapped_row_result.unwrap()]
+        ).unwrap();
+    }
+
+    transaction.commit().unwrap();
 }
