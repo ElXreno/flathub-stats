@@ -3,7 +3,7 @@ name: Flatpak build
 on: [push]
 
 env:
-  FLATPAK_ID: com.elxreno.flathub-stats.yml
+  FLATPAK_ID: com.elxreno.flathub-stats
   FP_BUNDLE: flathub-stats-${{ github.run_id }}.flatpak
   FP_BRANCH: stable
   FP_BUILD_NAME: flathub-stats
