@@ -4,6 +4,7 @@
 
 use directories::ProjectDirs;
 use std::path::Path;
+use crate::core::utils;
 
 lazy_static! {
     static ref PROJECT_DIRS: ProjectDirs =
@@ -11,5 +12,13 @@ lazy_static! {
 }
 
 pub fn get_cache_dir() -> &'static Path {
-    PROJECT_DIRS.cache_dir()
+    let cache_dir: &Path = PROJECT_DIRS.cache_dir();
+    utils::create_dir(cache_dir);
+    cache_dir
+}
+
+pub fn get_config_dir() -> &'static Path {
+    let config_dir: &Path = PROJECT_DIRS.config_dir();
+    utils::create_dir(config_dir);
+    config_dir
 }
