@@ -7,6 +7,7 @@ use chrono::prelude::*;
 use chrono::Duration;
 use futures::StreamExt;
 use reqwest::Client;
+use config::Config;
 
 pub mod config;
 pub mod sqlite;
@@ -26,12 +27,11 @@ pub async fn refresh_cache(config: &config::Config) {
 
     let fetchers = futures::stream::iter((0..days).map(|day| {
         let date = config.start_date + Duration::days(day);
-        let date_format = config.date_format;
         let force_refresh = config.force_refresh;
         let client = &client;
         let ignore_404 = config.ignore_404;
         async move {
-            download_stats(client, date, date_format, force_refresh, ignore_404).await;
+            download_stats(client, date, force_refresh, ignore_404).await;
         }
     }))
     .buffer_unordered(config.threads)
@@ -44,14 +44,13 @@ pub async fn refresh_cache(config: &config::Config) {
 async fn download_stats(
     client: &Client,
     date: DateTime<Utc>,
-    date_format: &str,
     force_refresh: bool,
     ignore_404: bool,
 ) {
-    let fdate = date.format(date_format).to_string();
+    let fdate = date.format(Config::default().date_format).to_string();
     debug!("Checking for existence: {}...", &fdate);
 
-    if !force_refresh && sqlite::is_stats_exists_by_date(fdate.as_str(), true) {
+    if !force_refresh && sqlite::is_stats_exists_by_date(date.format(Config::default().sqlite_date_format).to_string(), true) {
         debug!("{}: already downloaded!", date);
         return;
     }

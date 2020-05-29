@@ -7,7 +7,7 @@ extern crate rusqlite;
 use crate::core::config::project_dirs;
 use crate::core::config::Config;
 use crate::core::structs::AppId;
-use chrono::{DateTime, NaiveDate, Utc};
+use crate::core::utils;
 use rusqlite::{named_params, params, Connection};
 
 fn get_connection() -> Connection {
@@ -56,7 +56,7 @@ pub fn save_stats(app_ids: Vec<AppId>, is_full: bool) {
     for app_id in app_ids {
         let date = app_id
             .date
-            .format(Config::default().date_format)
+            .format(Config::default().sqlite_date_format)
             .to_string();
 
         transaction
@@ -83,31 +83,29 @@ pub fn save_stats(app_ids: Vec<AppId>, is_full: bool) {
     transaction.commit().unwrap();
 }
 
-pub fn get_stats_for_app_id(app_id: String) -> Vec<AppId> {
+pub fn get_stats_for_app_id(app_id: String, start_date: String, end_date: String) -> Vec<AppId> {
     let conn = get_connection();
 
     let mut stats_by_app_id_prep = conn
-        .prepare("select * from refs where appid = :appid")
+        .prepare("select * from refs where appid = :appid and date >= date(:start_date) and date <= date(:end_date);")
         .unwrap();
 
     let mapped_rows_result = stats_by_app_id_prep
-        .query_map_named(named_params! { ":appid": app_id }, |row| {
-            Ok(AppId {
-                app_id: row.get(0).unwrap(),
-                date: DateTime::<Utc>::from_utc(
-                    NaiveDate::parse_from_str(
-                        row.get::<usize, String>(1).unwrap().to_string().as_str(),
-                        Config::default().date_format,
-                    )
-                    .unwrap()
-                    .and_hms(0, 0, 0),
-                    Utc,
-                ),
-                downloads: row.get(2).unwrap(),
-                updates: row.get(3).unwrap(),
-                new_downloads: row.get(4).unwrap(),
-            })
-        })
+        .query_map_named(
+            named_params! { ":appid": app_id, ":start_date": start_date, ":end_date": end_date },
+            |row| {
+                Ok(AppId {
+                    app_id: row.get(0).unwrap(),
+                    date: utils::parse_datetime_from_string(
+                        row.get::<usize, String>(1).unwrap().to_string(),
+                        Config::default().sqlite_date_format
+                    ),
+                    downloads: row.get(2).unwrap(),
+                    updates: row.get(3).unwrap(),
+                    new_downloads: row.get(4).unwrap(),
+                })
+            },
+        )
         .unwrap();
 
     let mut result: Vec<AppId> = vec![];
@@ -118,7 +116,7 @@ pub fn get_stats_for_app_id(app_id: String) -> Vec<AppId> {
     result
 }
 
-pub fn is_stats_exists_by_date(date: &str, full: bool) -> bool {
+pub fn is_stats_exists_by_date(date: String, full: bool) -> bool {
     let conn = get_connection();
     let mut prep = conn
         .prepare("select * from dates where date = :date and is_full = :full limit 1")
