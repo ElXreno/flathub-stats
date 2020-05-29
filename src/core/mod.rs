@@ -17,7 +17,8 @@ pub async fn refresh_cache(config: &config::Config) {
     let days = config
         .end_date
         .signed_duration_since(config.start_date)
-        .num_days() + 1;
+        .num_days()
+        + 1;
 
     println!("Days: {}", days);
 
@@ -37,10 +38,6 @@ pub async fn refresh_cache(config: &config::Config) {
     .collect::<Vec<()>>();
     fetchers.await;
 
-    println!("Download done! Creating cache...");
-
-    sqlite::update_date_cache_table();
-
     println!("Refreshing done!");
 }
 
@@ -54,8 +51,7 @@ async fn download_stats(
     let fdate = date.format(date_format).to_string();
     debug!("Checking for existence: {}...", &fdate);
 
-    // TODO: Improve checking, maybe it not fully downloaded for this date
-    if !force_refresh && sqlite::is_stats_exists_by_date(fdate.as_str()) {
+    if !force_refresh && sqlite::is_stats_exists_by_date(fdate.as_str(), true) {
         debug!("{}: already downloaded!", date);
         return;
     }
@@ -103,7 +99,12 @@ async fn download_stats(
         })
     }
 
-    sqlite::save_stats(app_ids);
+    let is_full = fdate
+        != Utc::now()
+            .format(config::Config::default().date_format)
+            .to_string();
+
+    sqlite::save_stats(app_ids, is_full);
 
     println!("{}: downloaded! Status: {}", date, status);
 }

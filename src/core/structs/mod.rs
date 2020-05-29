@@ -12,3 +12,9 @@ pub struct AppId {
     pub updates: i64,
     pub new_downloads: i64,
 }
+
+#[derive(Debug)]
+pub struct Date {
+    pub date: DateTime<Utc>,
+    pub full: bool,
+}

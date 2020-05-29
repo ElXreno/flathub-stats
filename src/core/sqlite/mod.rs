@@ -37,8 +37,10 @@ pub fn initialize_db() {
 
     transaction
         .execute(
-            "create table if not exists date_cache (
-                date varchar(10) primary key
+            "create table if not exists dates (
+                date varchar(10),
+                is_full boolean,
+                primary key (date, is_full)
             );",
             params![],
         )
@@ -47,24 +49,33 @@ pub fn initialize_db() {
     transaction.commit().unwrap();
 }
 
-pub fn save_stats(app_ids: Vec<AppId>) {
+pub fn save_stats(app_ids: Vec<AppId>, is_full: bool) {
     let mut conn = get_connection();
     let transaction = conn.transaction().unwrap();
 
     for app_id in app_ids {
+        let date = app_id
+            .date
+            .format(Config::default().date_format)
+            .to_string();
+
         transaction
             .execute(
                 "insert or replace into refs values (?1, ?2, ?3, ?4, ?5);",
                 params![
                     app_id.app_id,
-                    app_id
-                        .date
-                        .format(Config::default().date_format)
-                        .to_string(),
+                    date,
                     app_id.downloads,
                     app_id.updates,
                     app_id.new_downloads
                 ],
+            )
+            .unwrap();
+
+        transaction
+            .execute(
+                "insert or replace into dates values (?1, ?2);",
+                params![date, is_full],
             )
             .unwrap();
     }
@@ -107,44 +118,19 @@ pub fn get_stats_for_app_id(app_id: String) -> Vec<AppId> {
     result
 }
 
-pub fn is_stats_exists_by_date(date: &str) -> bool {
+pub fn is_stats_exists_by_date(date: &str, full: bool) -> bool {
     let conn = get_connection();
     let mut prep = conn
-        .prepare("select * from date_cache where date = :date limit 1")
+        .prepare("select * from dates where date = :date and is_full = :full limit 1")
         .unwrap();
 
-    let mut result = prep.query_named(named_params! { ":date": date }).unwrap();
+    let mut result = prep
+        .query_named(named_params! { ":date": date, ":full": full })
+        .unwrap();
 
     if let Some(_row) = result.next().unwrap() {
         return true;
     }
 
     false
-}
-
-pub fn update_date_cache_table() {
-    let conn = get_connection();
-    let mut prep = conn
-        .prepare("select distinct date from refs order by date asc;")
-        .unwrap();
-
-    let mapped_rows_result = prep
-        .query_map(params![], |row| {
-            Ok(Some(row.get::<usize, String>(0).unwrap()))
-        })
-        .unwrap();
-
-    let mut conn = get_connection();
-    let transaction = conn.transaction().unwrap();
-
-    for mapped_row_result in mapped_rows_result {
-        transaction
-            .execute(
-                "insert or ignore into date_cache values (?1);",
-                params![mapped_row_result.unwrap()],
-            )
-            .unwrap();
-    }
-
-    transaction.commit().unwrap();
 }
