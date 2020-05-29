@@ -17,7 +17,7 @@ pub async fn refresh_cache(config: &config::Config) {
     let days = config
         .end_date
         .signed_duration_since(config.start_date)
-        .num_days();
+        .num_days() + 1;
 
     println!("Days: {}", days);
 
