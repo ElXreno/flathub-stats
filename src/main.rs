@@ -141,13 +141,20 @@ async fn main() {
                         config.start_date.format(config.sqlite_date_format).to_string(),
                         config.end_date.format(config.sqlite_date_format).to_string(),
                     );
-                    for day in days {
+                    for day in &days {
                         println!("-----------------");
                         println!("Date: {}", day.date.format(config.date_format));
                         println!("Downloads: {}", day.downloads);
                         println!("New downloads: {}", day.new_downloads);
                         println!("Updates: {}", day.updates);
                     }
+                    let total_downloads = days.iter().map(|x| x.downloads).fold(0, |acc, x| acc + x);
+                    let total_new_downloads = days.iter().map(|x| x.new_downloads).fold(0, |acc, x| acc + x);
+                    let total_updates = days.iter().map(|x| x.updates).fold(0, |acc, x| acc + x);
+                    println!("-----Summary-----");
+                    println!("Total downloads: {}", total_downloads);
+                    println!("Total new downloads: {}", total_new_downloads);
+                    println!("Total updates: {}", total_updates);
                 }
             }
         }
