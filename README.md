@@ -3,7 +3,7 @@
 [![github actions](https://github.com/ElXreno/flathub-stats/workflows/Flatpak%20build/badge.svg)](https://github.com/ElXreno/filesorter/actions)
 [![github actions](https://github.com/ElXreno/flathub-stats/workflows/Rust/badge.svg)](https://github.com/ElXreno/filesorter/actions)
 
-Utility for fast grepping stats from Flathub
+**Utility for fast grepping stats from Flathub.**
 
 ---
 
