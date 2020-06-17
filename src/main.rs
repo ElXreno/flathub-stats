@@ -45,6 +45,20 @@ async fn main() {
                         .long("ignore-404")
                         .takes_value(false)
                 )
+                .arg(
+                    Arg::with_name("start-date")
+                        .help("Start date")
+                        .short("s")
+                        .long("start-date")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("end-date")
+                        .help("End date")
+                        .short("e")
+                        .long("end-date")
+                        .takes_value(true)
+                )
         )
         .subcommand(
             SubCommand::with_name("appid")
@@ -111,6 +125,15 @@ async fn main() {
 
                 config.force_refresh = matches.is_present("force-refresh");
                 config.ignore_404 = matches.is_present("ignore-404");
+
+                if let Some(start_date) = matches.value_of("start-date") {
+                    config.start_date =
+                        core::utils::parse_datetime_from_string(start_date.to_string(), config.date_format);
+                }
+
+                if let Some(end_date) = matches.value_of("end-date") {
+                    config.end_date = core::utils::parse_datetime_from_string(end_date.to_string(), config.date_format);
+                }
             }
 
             refresh(&config).await;
