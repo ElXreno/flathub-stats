@@ -14,7 +14,12 @@ fn get_connection() -> Connection {
     let config_dir = project_dirs::get_config_dir();
     let db_path = config_dir.join("stats.db");
 
-    Connection::open(&db_path).expect(format!("Can't connect to {}", db_path.display()).as_str())
+    let conn = Connection::open(&db_path)
+        .expect(format!("Can't connect to {}", db_path.display()).as_str());
+    conn.pragma_update(None, "journal_mode", &"MEMORY").unwrap();
+    conn.pragma_update(None, "synchronous", &"OFF").unwrap();
+    conn.pragma_update(None, "cache_size", &100000).unwrap();
+    conn
 }
 
 pub fn initialize_db() {
@@ -49,35 +54,37 @@ pub fn initialize_db() {
     transaction.commit().unwrap();
 }
 
-pub fn save_stats(app_ids: Vec<AppId>, is_full: bool) {
+pub fn save_stats(stats: Vec<(Vec<AppId>, bool)>) {
     let mut conn = get_connection();
+
     let transaction = conn.transaction().unwrap();
 
-    for app_id in app_ids {
-        let date = app_id
-            .date
-            .format(Config::default().sqlite_date_format)
-            .to_string();
+    for (app_ids, is_full) in stats {
+        let mut app_id_prep = transaction
+            .prepare_cached("insert or replace into refs values (?1, ?2, ?3, ?4, ?5);")
+            .unwrap();
+        let mut date_prep = transaction
+            .prepare_cached("insert or replace into dates values (?1, ?2);")
+            .unwrap();
 
-        transaction
-            .execute(
-                "insert or replace into refs values (?1, ?2, ?3, ?4, ?5);",
-                params![
+        for app_id in app_ids {
+            let date = app_id
+                .date
+                .format(Config::default().sqlite_date_format)
+                .to_string();
+
+            app_id_prep
+                .execute(params![
                     app_id.app_id,
                     date,
                     app_id.downloads,
                     app_id.updates,
                     app_id.new_downloads
-                ],
-            )
-            .unwrap();
+                ])
+                .unwrap();
 
-        transaction
-            .execute(
-                "insert or replace into dates values (?1, ?2);",
-                params![date, is_full],
-            )
-            .unwrap();
+            date_prep.execute(params![date, is_full]).unwrap();
+        }
     }
 
     transaction.commit().unwrap();
@@ -98,7 +105,7 @@ pub fn get_stats_for_app_id(app_id: String, start_date: String, end_date: String
                     app_id: row.get(0).unwrap(),
                     date: utils::parse_datetime_from_string(
                         row.get::<usize, String>(1).unwrap().to_string(),
-                        Config::default().sqlite_date_format
+                        Config::default().sqlite_date_format,
                     ),
                     downloads: row.get(2).unwrap(),
                     updates: row.get(3).unwrap(),

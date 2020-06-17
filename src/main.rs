@@ -26,39 +26,39 @@ async fn main() {
                 .about("Refreshes current stats cache")
                 .arg(
                     Arg::with_name("threads")
-                        .help("Set threads for refreshing stats (currently not fully required due sqlite)")
+                        .help("Set threads for refreshing stats")
                         .short("t")
                         .long("threads")
-                        .takes_value(true)
+                        .takes_value(true),
                 )
                 .arg(
                     Arg::with_name("force-refresh")
                         .help("Override already downloaded stats")
                         .short("f")
                         .long("force")
-                        .takes_value(false)
+                        .takes_value(false),
                 )
                 .arg(
                     Arg::with_name("ignore-404")
                         .help("Ignore 404 status code")
                         .short("i")
                         .long("ignore-404")
-                        .takes_value(false)
+                        .takes_value(false),
                 )
                 .arg(
                     Arg::with_name("start-date")
                         .help("Start date")
                         .short("s")
                         .long("start-date")
-                        .takes_value(true)
+                        .takes_value(true),
                 )
                 .arg(
                     Arg::with_name("end-date")
                         .help("End date")
                         .short("e")
                         .long("end-date")
-                        .takes_value(true)
-                )
+                        .takes_value(true),
+                ),
         )
         .subcommand(
             SubCommand::with_name("appid")
@@ -67,43 +67,43 @@ async fn main() {
                     Arg::with_name("appid")
                         .help("App ID")
                         .index(1)
-                        .takes_value(true)
+                        .takes_value(true),
                 )
                 .arg(
                     Arg::with_name("refresh")
                         .help("Refreshes current stats cache")
                         .short("r")
                         .long("refresh")
-                        .takes_value(false)
+                        .takes_value(false),
                 )
                 .arg(
-                Arg::with_name("force-refresh")
-                    .help("Override already downloaded stats")
-                    .short("f")
-                    .long("force")
-                    .takes_value(false)
+                    Arg::with_name("force-refresh")
+                        .help("Override already downloaded stats")
+                        .short("f")
+                        .long("force")
+                        .takes_value(false),
                 )
                 .arg(
                     Arg::with_name("ignore-404")
                         .help("Ignore 404 status code")
                         .short("i")
                         .long("ignore-404")
-                        .takes_value(false)
+                        .takes_value(false),
                 )
                 .arg(
                     Arg::with_name("start-date")
                         .help("Start date")
                         .short("s")
                         .long("start-date")
-                        .takes_value(true)
+                        .takes_value(true),
                 )
                 .arg(
                     Arg::with_name("end-date")
                         .help("End date")
                         .short("e")
                         .long("end-date")
-                        .takes_value(true)
-                )
+                        .takes_value(true),
+                ),
         )
         .get_matches();
 
@@ -127,12 +127,17 @@ async fn main() {
                 config.ignore_404 = matches.is_present("ignore-404");
 
                 if let Some(start_date) = matches.value_of("start-date") {
-                    config.start_date =
-                        core::utils::parse_datetime_from_string(start_date.to_string(), config.date_format);
+                    config.start_date = core::utils::parse_datetime_from_string(
+                        start_date.to_string(),
+                        config.date_format,
+                    );
                 }
 
                 if let Some(end_date) = matches.value_of("end-date") {
-                    config.end_date = core::utils::parse_datetime_from_string(end_date.to_string(), config.date_format);
+                    config.end_date = core::utils::parse_datetime_from_string(
+                        end_date.to_string(),
+                        config.date_format,
+                    );
                 }
             }
 
@@ -146,12 +151,17 @@ async fn main() {
                 config.ignore_404 = matches.is_present("ignore-404");
 
                 if let Some(start_date) = matches.value_of("start-date") {
-                    config.start_date =
-                        core::utils::parse_datetime_from_string(start_date.to_string(), config.date_format);
+                    config.start_date = core::utils::parse_datetime_from_string(
+                        start_date.to_string(),
+                        config.date_format,
+                    );
                 }
 
                 if let Some(end_date) = matches.value_of("end-date") {
-                    config.end_date = core::utils::parse_datetime_from_string(end_date.to_string(), config.date_format);
+                    config.end_date = core::utils::parse_datetime_from_string(
+                        end_date.to_string(),
+                        config.date_format,
+                    );
                 }
 
                 if matches.is_present("refresh") {
@@ -161,8 +171,14 @@ async fn main() {
                 if let Some(app_id) = matches.value_of("appid") {
                     let days = core::sqlite::get_stats_for_app_id(
                         app_id.to_string(),
-                        config.start_date.format(config.sqlite_date_format).to_string(),
-                        config.end_date.format(config.sqlite_date_format).to_string(),
+                        config
+                            .start_date
+                            .format(config.sqlite_date_format)
+                            .to_string(),
+                        config
+                            .end_date
+                            .format(config.sqlite_date_format)
+                            .to_string(),
                     );
                     for day in &days {
                         println!("-----------------");
@@ -171,8 +187,12 @@ async fn main() {
                         println!("New downloads: {}", day.new_downloads);
                         println!("Updates: {}", day.updates);
                     }
-                    let total_downloads = days.iter().map(|x| x.downloads).fold(0, |acc, x| acc + x);
-                    let total_new_downloads = days.iter().map(|x| x.new_downloads).fold(0, |acc, x| acc + x);
+                    let total_downloads =
+                        days.iter().map(|x| x.downloads).fold(0, |acc, x| acc + x);
+                    let total_new_downloads = days
+                        .iter()
+                        .map(|x| x.new_downloads)
+                        .fold(0, |acc, x| acc + x);
                     let total_updates = days.iter().map(|x| x.updates).fold(0, |acc, x| acc + x);
                     println!("-----Summary-----");
                     println!("Total downloads: {}", total_downloads);

@@ -5,9 +5,9 @@
 use crate::core::structs::AppId;
 use chrono::prelude::*;
 use chrono::Duration;
+use config::Config;
 use futures::StreamExt;
 use reqwest::Client;
-use config::Config;
 
 pub mod config;
 pub mod sqlite;
@@ -23,6 +23,8 @@ pub async fn refresh_cache(config: &config::Config) {
 
     println!("Days: {}", days);
 
+    let start_download_time = chrono::Local::now();
+
     let client = Client::new();
 
     let fetchers = futures::stream::iter((0..days).map(|day| {
@@ -31,14 +33,38 @@ pub async fn refresh_cache(config: &config::Config) {
         let client = &client;
         let ignore_404 = config.ignore_404;
         async move {
-            download_stats(client, date, force_refresh, ignore_404).await;
+            let result = download_stats(client, date, force_refresh, ignore_404).await;
+            result
         }
     }))
     .buffer_unordered(config.threads)
-    .collect::<Vec<()>>();
-    fetchers.await;
+    .collect::<Vec<(Vec<AppId>, bool)>>();
+
+    let result = fetchers.await;
+
+    let end_download_time = chrono::Local::now();
+
+    println!("Saving...");
+
+    sqlite::save_stats(result);
+
+    let end_save_time = chrono::Local::now();
 
     println!("Refreshing done!");
+
+    println!("-----Debug stats-----");
+    println!(
+        "Download time: ~{} ms",
+        end_download_time
+            .signed_duration_since(start_download_time)
+            .num_milliseconds()
+    );
+    println!(
+        "Save time: ~{} ms",
+        end_save_time
+            .signed_duration_since(end_download_time)
+            .num_milliseconds()
+    );
 }
 
 async fn download_stats(
@@ -46,13 +72,19 @@ async fn download_stats(
     date: DateTime<Utc>,
     force_refresh: bool,
     ignore_404: bool,
-) {
+) -> (Vec<AppId>, bool) {
     let fdate = date.format(Config::default().date_format).to_string();
     debug!("Checking for existence: {}...", &fdate);
 
-    if !force_refresh && sqlite::is_stats_exists_by_date(date.format(Config::default().sqlite_date_format).to_string(), true) {
+    if !force_refresh
+        && sqlite::is_stats_exists_by_date(
+            date.format(Config::default().sqlite_date_format)
+                .to_string(),
+            true,
+        )
+    {
         debug!("{}: already downloaded!", date);
-        return;
+        return (vec![], false);
     }
 
     let file_path = format!("{}.json", &fdate);
@@ -69,7 +101,7 @@ async fn download_stats(
         if response.status() != 404 || !ignore_404 {
             println!("{}: failed to download! Status: {}", date, status);
         }
-        return;
+        return (vec![], false);
     }
 
     let body = &response.text().await.unwrap();
@@ -103,7 +135,6 @@ async fn download_stats(
             .format(config::Config::default().date_format)
             .to_string();
 
-    sqlite::save_stats(app_ids, is_full);
-
     println!("{}: downloaded! Status: {}", date, status);
+    (app_ids, is_full)
 }
