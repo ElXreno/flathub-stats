@@ -15,7 +15,7 @@ jobs:
       run: sudo apt update && sudo apt install -y libsqlite3-dev
     
     - name: Set up a Rust toolchain
-      uses: hecrj/setup-rust-action@v1.3.1
+      uses: hecrj/setup-rust-action@v1
       with:
         rust-version: ${{ matrix.rust }}
     - name: Checkout

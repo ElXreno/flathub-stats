@@ -1,0 +1,34 @@
+on:
+  release:
+    types:
+      - created
+
+name: Upload Release Asset
+
+jobs:
+  build:
+    name: Upload Release Asset
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install build dependencies
+        run: sudo apt update && sudo apt install -y libsqlite3-dev
+
+      - name: Set up a Rust toolchain
+        uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: ${{ matrix.rust }}
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Make vendor
+        run: cargo vendor && tar czvf flathub-stats-sources.tar.gz --exclude .git *
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./flathub-stats-sources.tar.gz
+          asset_name: flathub-stats-sources.tar.gz
+          asset_content_type: application/gzip
