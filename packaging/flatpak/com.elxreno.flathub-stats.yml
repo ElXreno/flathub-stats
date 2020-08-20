@@ -29,6 +29,6 @@ modules:
       - install -D -m 755 ./target/release/flathub-stats -t /app/bin/
     sources:
       - type: git
-        commit: 4cbd78e26a0418f9d9664ce2a39c1170e0640169
-        url: https://github.com/ElXreno/flathub-stats
+        url: https://github.com/ElXreno/flathub-stats.git
+        tag: v0.2.0
       - generated-sources.json
