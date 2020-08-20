@@ -33,9 +33,9 @@ async fn main() {
                 )
                 .arg(
                     Arg::with_name("force-refresh")
-                        .help("Override already downloaded stats")
+                        .help("Override already cached stats")
                         .short("f")
-                        .long("force")
+                        .long("force-refresh")
                         .takes_value(false),
                 )
                 .arg(
@@ -68,17 +68,17 @@ async fn main() {
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("refresh")
-                .help("Refreshes current stats cache")
-                .short("r")
-                .long("refresh")
+            Arg::with_name("disable-refresh")
+                .help("Don't refresh current stats cache")
+                .short("d")
+                .long("disable-refresh")
                 .takes_value(false),
         )
         .arg(
             Arg::with_name("force-refresh")
-                .help("Override already downloaded stats")
+                .help("Override already cached stats")
                 .short("f")
-                .long("force")
+                .long("force-refresh")
                 .takes_value(false),
         )
         .arg(
@@ -161,7 +161,7 @@ async fn main() {
                     );
                 }
 
-                if matches.is_present("refresh") || core::sqlite::db_is_empty() {
+                if !matches.is_present("disable-refresh") || core::sqlite::db_is_empty() {
                     refresh(&config).await;
                 }
 
