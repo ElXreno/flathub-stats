@@ -57,9 +57,7 @@ pub fn initialize_db() {
 pub fn db_is_empty() -> bool {
     let conn = get_connection();
 
-    let mut prep = conn
-        .prepare("select * from dates limit 1")
-        .unwrap();
+    let mut prep = conn.prepare("select * from dates limit 1").unwrap();
 
     let mut result = prep.query(params![]).unwrap();
 

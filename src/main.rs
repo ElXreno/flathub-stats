@@ -40,9 +40,9 @@ async fn main() {
                 )
                 .arg(
                     Arg::with_name("ignore-404")
-                        .help("Ignore 404 status code")
+                        .help("Disable 404 code ignoring")
                         .short("i")
-                        .long("ignore-404")
+                        .long("disable-404-ignoring")
                         .takes_value(false),
                 )
                 .arg(
@@ -61,8 +61,8 @@ async fn main() {
                 ),
         )
         .arg(
-            Arg::with_name("appid")
-                .value_name("APPID")
+            Arg::with_name("app-id")
+                .value_name("APP-ID")
                 .help("Get stats by application ID")
                 .index(1)
                 .takes_value(true),
@@ -83,9 +83,9 @@ async fn main() {
         )
         .arg(
             Arg::with_name("ignore-404")
-                .help("Ignore 404 status code")
+                .help("Disable 404 code ignoring")
                 .short("i")
-                .long("ignore-404")
+                .long("disable-404-ignoring")
                 .takes_value(false),
         )
         .arg(
@@ -121,7 +121,7 @@ async fn main() {
                 }
 
                 config.force_refresh = matches.is_present("force-refresh");
-                config.ignore_404 = matches.is_present("ignore-404");
+                config.ignore_404 = !matches.is_present("ignore-404");
 
                 if let Some(start_date) = matches.value_of("start-date") {
                     config.start_date = core::utils::parse_datetime_from_string(
@@ -141,11 +141,11 @@ async fn main() {
             refresh(&config).await;
         }
         _ => {
-            if let Some(app_id) = matches.value_of("appid") {
+            if let Some(app_id) = matches.value_of("app-id") {
                 trace!("Matched {}", app_id);
 
                 config.force_refresh = matches.is_present("force-refresh");
-                config.ignore_404 = matches.is_present("ignore-404");
+                config.ignore_404 = !matches.is_present("ignore-404");
 
                 if let Some(start_date) = matches.value_of("start-date") {
                     config.start_date = core::utils::parse_datetime_from_string(
@@ -203,9 +203,8 @@ async fn main() {
 }
 
 async fn refresh(config: &core::config::Config) {
-    println!(
-        "Config: threads = {}; force-refresh = {}",
-        config.threads, config.force_refresh
-    );
+    println!("Updating stats cache, please wait...");
+    println!("Threads = {}", config.threads);
+    println!("Force refresh: {}", config.force_refresh);
     core::refresh_cache(config).await;
 }

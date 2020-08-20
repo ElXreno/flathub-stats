@@ -50,7 +50,7 @@ pub async fn refresh_cache(config: &config::Config) {
 
     let end_save_time = chrono::Local::now();
 
-    println!("Refreshing done!");
+    println!("Update complete!");
 
     println!("-----Debug stats-----");
     println!(
