@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 
 Name:           flathub-stats
-Version:        0.2.0
+Version:        0.2.1
 Release:        1%{?dist}
 Summary:        Utility for fast grepping stats from Flathub
 
@@ -48,6 +48,9 @@ install -m 0755 -Dp target/release/%{name} %{buildroot}%{_bindir}/%{name}
 %{_bindir}/%{name}
 
 %changelog
+* Thu Aug 20 2020 ElXreno <elxreno@gmail.com> - 0.2.1-1
+- Update to version 0.2.1
+
 * Thu Aug 20 2020 ElXreno <elxreno@gmail.com> - 0.2.0-1
 - Update to version 0.2.0
 

@@ -8,26 +8,27 @@
 ---
 
 ```bash
-flathub-stats 0.2.0
+flathub-stats 0.2.1
 ElXreno <elxreno@gmail.com>
 
 
 USAGE:
-    flathub-stats [FLAGS] [OPTIONS] [APPID] [SUBCOMMAND]
+    flathub-stats [FLAGS] [OPTIONS] [APP-ID] [SUBCOMMAND]
 
 FLAGS:
-    -f, --force         Override already downloaded stats
-    -h, --help          Prints help information
-    -i, --ignore-404    Ignore 404 status code
-    -r, --refresh       Refreshes current stats cache
-    -V, --version       Prints version information
+    -d, --disable-refresh         Don't refresh current stats cache
+    -f, --force-refresh           Override already cached stats
+    -h, --help                    Prints help information
+    -i, --disable-404-ignoring    Disable 404 code ignoring
+    -a, --show-all                Show stats for all days (by default shows only for 180 days)
+    -V, --version                 Prints version information
 
 OPTIONS:
-    -e, --end-date <end-date>        End date
-    -s, --start-date <start-date>    Start date
+    -e, --end-date <end-date>        End date (default is today)
+    -s, --start-date <start-date>    Start date (default is 2018/04/29 if --show-all is present)
 
 ARGS:
-    <APPID>    Get stats by application ID
+    <APP-ID>    Get stats by application ID
 
 SUBCOMMANDS:
     help       Prints this message or the help of the given subcommand(s)

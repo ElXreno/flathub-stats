@@ -30,5 +30,5 @@ modules:
     sources:
       - type: git
         url: https://github.com/ElXreno/flathub-stats.git
-        tag: v0.2.0
+        tag: v0.2.1
       - generated-sources.json
