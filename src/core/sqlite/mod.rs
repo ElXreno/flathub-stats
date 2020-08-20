@@ -64,10 +64,10 @@ pub fn db_is_empty() -> bool {
     let mut result = prep.query(params![]).unwrap();
 
     if let Some(_row) = result.next().unwrap() {
-        return true;
+        return false;
     }
 
-    false
+    true
 }
 
 pub fn save_stats(stats: Vec<(Vec<AppId>, bool)>) {
