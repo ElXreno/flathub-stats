@@ -21,8 +21,6 @@ pub async fn refresh_cache(config: &config::Config) {
         .num_days()
         + 1;
 
-    println!("Days: {}", days);
-
     let start_download_time = chrono::Local::now();
 
     let client = Client::new();
@@ -52,19 +50,20 @@ pub async fn refresh_cache(config: &config::Config) {
 
     println!("Update complete!");
 
-    println!("-----Debug stats-----");
-    println!(
+    trace!("-----Debug stats-----");
+    trace!(
         "Download time: ~{} ms",
         end_download_time
             .signed_duration_since(start_download_time)
             .num_milliseconds()
     );
-    println!(
+    trace!(
         "Save time: ~{} ms",
         end_save_time
             .signed_duration_since(end_download_time)
             .num_milliseconds()
     );
+    trace!("---------------------");
 }
 
 async fn download_stats(

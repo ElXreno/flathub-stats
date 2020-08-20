@@ -16,6 +16,8 @@ pub struct Config {
     pub threads: usize,
     pub force_refresh: bool,
     pub ignore_404: bool,
+    pub show_all: bool,
+    pub show_days: i64,
 }
 
 impl Default for Config {
@@ -28,6 +30,8 @@ impl Default for Config {
             threads: 4,
             force_refresh: false,
             ignore_404: false,
+            show_all: false,
+            show_days: 180,
         }
     }
 }
