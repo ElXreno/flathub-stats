@@ -60,50 +60,47 @@ async fn main() {
                         .takes_value(true),
                 ),
         )
-        .subcommand(
-            SubCommand::with_name("appid")
-                .about("Get stats for appid")
-                .arg(
-                    Arg::with_name("appid")
-                        .help("App ID")
-                        .index(1)
-                        .takes_value(true),
-                )
-                .arg(
-                    Arg::with_name("refresh")
-                        .help("Refreshes current stats cache")
-                        .short("r")
-                        .long("refresh")
-                        .takes_value(false),
-                )
-                .arg(
-                    Arg::with_name("force-refresh")
-                        .help("Override already downloaded stats")
-                        .short("f")
-                        .long("force")
-                        .takes_value(false),
-                )
-                .arg(
-                    Arg::with_name("ignore-404")
-                        .help("Ignore 404 status code")
-                        .short("i")
-                        .long("ignore-404")
-                        .takes_value(false),
-                )
-                .arg(
-                    Arg::with_name("start-date")
-                        .help("Start date")
-                        .short("s")
-                        .long("start-date")
-                        .takes_value(true),
-                )
-                .arg(
-                    Arg::with_name("end-date")
-                        .help("End date")
-                        .short("e")
-                        .long("end-date")
-                        .takes_value(true),
-                ),
+        .arg(
+            Arg::with_name("appid")
+                .value_name("APPID")
+                .help("Get stats by application ID")
+                .index(1)
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("refresh")
+                .help("Refreshes current stats cache")
+                .short("r")
+                .long("refresh")
+                .takes_value(false),
+        )
+        .arg(
+            Arg::with_name("force-refresh")
+                .help("Override already downloaded stats")
+                .short("f")
+                .long("force")
+                .takes_value(false),
+        )
+        .arg(
+            Arg::with_name("ignore-404")
+                .help("Ignore 404 status code")
+                .short("i")
+                .long("ignore-404")
+                .takes_value(false),
+        )
+        .arg(
+            Arg::with_name("start-date")
+                .help("Start date")
+                .short("s")
+                .long("start-date")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("end-date")
+                .help("End date")
+                .short("e")
+                .long("end-date")
+                .takes_value(true),
         )
         .get_matches();
 
@@ -143,10 +140,10 @@ async fn main() {
 
             refresh(&config).await;
         }
-        Some("appid") => {
-            trace!("Matched appid subcommand");
+        _ => {
+            if let Some(app_id) = matches.value_of("appid") {
+                trace!("Matched {}", app_id);
 
-            if let Some(ref matches) = matches.subcommand_matches("appid") {
                 config.force_refresh = matches.is_present("force-refresh");
                 config.ignore_404 = matches.is_present("ignore-404");
 
@@ -168,41 +165,39 @@ async fn main() {
                     refresh(&config).await;
                 }
 
-                if let Some(app_id) = matches.value_of("appid") {
-                    let days = core::sqlite::get_stats_for_app_id(
-                        app_id.to_string(),
-                        config
-                            .start_date
-                            .format(config.sqlite_date_format)
-                            .to_string(),
-                        config
-                            .end_date
-                            .format(config.sqlite_date_format)
-                            .to_string(),
-                    );
-                    for day in &days {
-                        println!("-----------------");
-                        println!("Date: {}", day.date.format(config.date_format));
-                        println!("Downloads: {}", day.downloads);
-                        println!("New downloads: {}", day.new_downloads);
-                        println!("Updates: {}", day.updates);
-                    }
-                    let total_downloads =
-                        days.iter().map(|x| x.downloads).fold(0, |acc, x| acc + x);
-                    let total_new_downloads = days
-                        .iter()
-                        .map(|x| x.new_downloads)
-                        .fold(0, |acc, x| acc + x);
-                    let total_updates = days.iter().map(|x| x.updates).fold(0, |acc, x| acc + x);
-                    println!("-----Summary-----");
-                    println!("Total downloads: {}", total_downloads);
-                    println!("Total new downloads: {}", total_new_downloads);
-                    println!("Total updates: {}", total_updates);
+                let days = core::sqlite::get_stats_for_app_id(
+                    app_id.to_string(),
+                    config
+                        .start_date
+                        .format(config.sqlite_date_format)
+                        .to_string(),
+                    config
+                        .end_date
+                        .format(config.sqlite_date_format)
+                        .to_string(),
+                );
+                for day in &days {
+                    println!("-----------------");
+                    println!("Date: {}", day.date.format(config.date_format));
+                    println!("Downloads: {}", day.downloads);
+                    println!("New downloads: {}", day.new_downloads);
+                    println!("Updates: {}", day.updates);
                 }
+
+                let total_downloads = days.iter().map(|x| x.downloads).fold(0, |acc, x| acc + x);
+                let total_new_downloads = days
+                    .iter()
+                    .map(|x| x.new_downloads)
+                    .fold(0, |acc, x| acc + x);
+                let total_updates = days.iter().map(|x| x.updates).fold(0, |acc, x| acc + x);
+
+                println!("-----Summary-----");
+                println!("Total downloads: {}", total_downloads);
+                println!("Total new downloads: {}", total_new_downloads);
+                println!("Total updates: {}", total_updates);
+            } else {
+                trace!("Matched nothing");
             }
-        }
-        _ => {
-            trace!("Matched None o_O");
         }
     }
 }
