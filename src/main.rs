@@ -161,7 +161,7 @@ async fn main() {
                     );
                 }
 
-                if matches.is_present("refresh") {
+                if matches.is_present("refresh") || core::sqlite::db_is_empty() {
                     refresh(&config).await;
                 }
 

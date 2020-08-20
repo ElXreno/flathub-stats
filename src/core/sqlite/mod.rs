@@ -54,6 +54,22 @@ pub fn initialize_db() {
     transaction.commit().unwrap();
 }
 
+pub fn db_is_empty() -> bool {
+    let conn = get_connection();
+
+    let mut prep = conn
+        .prepare("select * from dates limit 1")
+        .unwrap();
+
+    let mut result = prep.query(params![]).unwrap();
+
+    if let Some(_row) = result.next().unwrap() {
+        return true;
+    }
+
+    false
+}
+
 pub fn save_stats(stats: Vec<(Vec<AppId>, bool)>) {
     let mut conn = get_connection();
 
