@@ -182,15 +182,22 @@ async fn main() {
                     );
                 }
 
-                if !config.show_all {
-                    config.start_date = config.end_date - Duration::days(config.show_days);
-                }
-
                 if !matches.is_present("disable-refresh") || core::sqlite::db_is_empty() {
                     refresh(&config).await;
                 }
 
+                // TODO: URGENT: Optimize this trashy code
                 let days = core::sqlite::get_stats_for_app_id(
+                    app_id.to_string(),
+                    (config.end_date - Duration::days(config.show_days))
+                        .format(config.sqlite_date_format)
+                        .to_string(),
+                    config
+                        .end_date
+                        .format(config.sqlite_date_format)
+                        .to_string(),
+                );
+                let days_all = core::sqlite::get_stats_for_app_id(
                     app_id.to_string(),
                     config
                         .start_date
@@ -201,6 +208,7 @@ async fn main() {
                         .format(config.sqlite_date_format)
                         .to_string(),
                 );
+
                 for day in &days {
                     println!("-----------------");
                     println!("Date: {}", day.date.format(config.date_format));
@@ -216,12 +224,26 @@ async fn main() {
                     .fold(0, |acc, x| acc + x);
                 let total_updates = days.iter().map(|x| x.updates).fold(0, |acc, x| acc + x);
 
-                println!("-----Summary-----");
-                println!("Total downloads: {}", total_downloads);
-                println!("Total new downloads: {}", total_new_downloads);
-                println!("Total updates: {}", total_updates);
+                let total_downloads_full = days_all.iter().map(|x| x.downloads).fold(0, |acc, x| acc + x);
+                let total_new_downloads_full = days_all
+                    .iter()
+                    .map(|x| x.new_downloads)
+                    .fold(0, |acc, x| acc + x);
+                let total_updates_full = days_all.iter().map(|x| x.updates).fold(0, |acc, x| acc + x);
 
-            // TODO: Show summary for all days
+                if !config.show_all {
+                    println!();
+                    println!("----- Summary of the last {} days -----", config.show_days);
+                    println!("Total downloads: {}", total_downloads);
+                    println!("Total new downloads: {}", total_new_downloads);
+                    println!("Total updates: {}", total_updates);
+                }
+
+                println!();
+                println!("----- Summary from {} to {} -----", config.start_date.format(config.date_format), config.end_date.format(config.date_format));
+                println!("Total downloads: {}", total_downloads_full);
+                println!("Total new downloads: {}", total_new_downloads_full);
+                println!("Total updates: {}", total_updates_full);
             } else {
                 trace!("Matched nothing");
             }
