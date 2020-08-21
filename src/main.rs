@@ -113,7 +113,12 @@ async fn main() {
                     config.show_days
                 )
             )
-                 .long_help("Show stats for all days (by default shows only for {} days if --start-date or --end-date not present)")
+             .long_help(
+                 &format!(
+                     "Show stats for all days (by default shows only for {} days if --start-date or --end-date not present)",
+                     config.show_days
+                 )
+             )
             .short("a")
             .long("show-all")
             .takes_value(false),
