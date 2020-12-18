@@ -1,26 +1,10 @@
-[package]
-name = "flathub-stats"
-version = "0.2.1"
-authors = ["ElXreno <elxreno@gmail.com>"]
-license = "MPL-2.0"
-edition = "2018"
+[workspace]
+members = [
+    "cli",
+]
 
 # Profiles
 [profile.release]
 lto = true
 panic = "abort"
 codegen-units = 1
-
-[dependencies]
-futures = { version = "0.3.8", features = ["thread-pool"] }
-reqwest = { version = "0.10.10", features = ["blocking", "json"] }
-tokio = { version = "0.3.6", features = ["full"] }
-
-chrono = "0.4.19"
-clap = "2.33.3"
-directories = "3.0.1"
-lazy_static = "1.4.0"
-log = "0.4.11"
-rusqlite = "0.24.2"
-serde = { version="1.0.118", features = ["derive"] }
-serde_json = "1.0.60"
