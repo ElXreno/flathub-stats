@@ -4,11 +4,11 @@
 
 extern crate rusqlite;
 
-use crate::core::config::project_dirs;
-use crate::core::config::Config;
-use crate::core::structs::AppId;
-use crate::core::utils;
 use rusqlite::{named_params, params, Connection};
+
+use crate::structs::AppId;
+use crate::config::{Config, project_dirs};
+use crate::utils;
 
 fn get_connection() -> Connection {
     let config_dir = project_dirs::get_config_dir();

@@ -2,17 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-use crate::core::structs::AppId;
+use common::structs::AppId;
 use chrono::prelude::*;
 use chrono::Duration;
-use config::Config;
+use common::config;
+use common::sqlite;
 use futures::StreamExt;
 use reqwest::Client;
-
-pub mod config;
-pub mod sqlite;
-pub mod structs;
-pub mod utils;
 
 pub async fn refresh_cache(config: &config::Config) {
     let days = config
@@ -72,12 +68,12 @@ async fn download_stats(
     force_refresh: bool,
     ignore_404: bool,
 ) -> (Vec<AppId>, bool) {
-    let fdate = date.format(Config::default().date_format).to_string();
+    let fdate = date.format(config::Config::default().date_format).to_string();
     debug!("Checking for existence: {}...", &fdate);
 
     if !force_refresh
         && sqlite::is_stats_exists_by_date(
-            date.format(Config::default().sqlite_date_format)
+            date.format(config::Config::default().sqlite_date_format)
                 .to_string(),
             true,
         )

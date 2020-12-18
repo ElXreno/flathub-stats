@@ -6,18 +6,17 @@
 extern crate clap;
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate lazy_static;
 
 use chrono::Duration;
 use clap::{App, AppSettings, Arg, SubCommand};
+use common::{utils,sqlite,config};
 
 mod core;
 
 #[tokio::main]
 async fn main() {
     trace!("Initialize config...");
-    let mut config = core::config::Config::default();
+    let mut config = common::config::Config::default();
 
     trace!("Getting matches...");
     let matches = App::new(crate_name!())
@@ -126,7 +125,7 @@ async fn main() {
         .get_matches();
 
     trace!("Initializing db...");
-    core::sqlite::initialize_db();
+    sqlite::initialize_db();
 
     trace!("Matching subcommand...");
     match matches.subcommand_name() {
@@ -142,14 +141,14 @@ async fn main() {
                 config.ignore_404 = !matches.is_present("ignore-404");
 
                 if let Some(start_date) = matches.value_of("start-date") {
-                    config.start_date = core::utils::parse_datetime_from_string(
+                    config.start_date = utils::parse_datetime_from_string(
                         start_date.to_string(),
                         config.date_format,
                     );
                 }
 
                 if let Some(end_date) = matches.value_of("end-date") {
-                    config.end_date = core::utils::parse_datetime_from_string(
+                    config.end_date = utils::parse_datetime_from_string(
                         end_date.to_string(),
                         config.date_format,
                     );
@@ -168,7 +167,7 @@ async fn main() {
 
                 if let Some(start_date) = matches.value_of("start-date") {
                     config.show_all = true;
-                    config.start_date = core::utils::parse_datetime_from_string(
+                    config.start_date = utils::parse_datetime_from_string(
                         start_date.to_string(),
                         config.date_format,
                     );
@@ -176,18 +175,18 @@ async fn main() {
 
                 if let Some(end_date) = matches.value_of("end-date") {
                     config.show_all = true;
-                    config.end_date = core::utils::parse_datetime_from_string(
+                    config.end_date = utils::parse_datetime_from_string(
                         end_date.to_string(),
                         config.date_format,
                     );
                 }
 
-                if !matches.is_present("disable-refresh") || core::sqlite::db_is_empty() {
+                if !matches.is_present("disable-refresh") || sqlite::db_is_empty() {
                     refresh(&config).await;
                 }
 
                 // TODO: URGENT: Optimize this trashy code
-                let days = core::sqlite::get_stats_for_app_id(
+                let days = sqlite::get_stats_for_app_id(
                     app_id.to_string(),
                     (config.end_date - Duration::days(config.show_days))
                         .format(config.sqlite_date_format)
@@ -197,7 +196,7 @@ async fn main() {
                         .format(config.sqlite_date_format)
                         .to_string(),
                 );
-                let days_all = core::sqlite::get_stats_for_app_id(
+                let days_all = sqlite::get_stats_for_app_id(
                     app_id.to_string(),
                     config
                         .start_date
@@ -251,7 +250,7 @@ async fn main() {
     }
 }
 
-async fn refresh(config: &core::config::Config) {
+async fn refresh(config: &config::Config) {
     println!("Updating stats cache, please wait...");
     trace!("Threads = {}", config.threads);
     trace!("Force refresh: {}", config.force_refresh);

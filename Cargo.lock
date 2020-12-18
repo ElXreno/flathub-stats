@@ -211,15 +211,24 @@ version = "0.2.1"
 dependencies = [
  "chrono",
  "clap",
- "directories",
+ "flathub-stats-common",
  "futures",
- "lazy_static",
  "log",
  "reqwest",
- "rusqlite",
  "serde",
  "serde_json",
  "tokio 0.3.6",
+]
+
+[[package]]
+name = "flathub-stats-common"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "directories",
+ "lazy_static",
+ "log",
+ "rusqlite",
 ]
 
 [[package]]
