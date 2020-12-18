@@ -5,6 +5,10 @@ authors = ["ElXreno <elxreno@gmail.com>"]
 license = "MPL-2.0"
 edition = "2018"
 
+[[bin]]
+name = "flathub-stats"
+path = "src/main.rs"
+
 [dependencies]
 common = { package = "flathub-stats-common", path = "../common" }
 
