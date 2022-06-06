@@ -14,7 +14,7 @@ common = { package = "flathub-stats-common", path = "../common" }
 
 futures = { version = "0.3.8", features = ["thread-pool"] }
 reqwest = { version = "0.10.10", features = ["blocking", "json"] }
-tokio = { version = "0.2.24", features = ["full"] }
+tokio = { version = "1.8.4", features = ["full"] }
 
 clap = "2.33.3"
 chrono = "0.4.19"
